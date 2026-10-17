@@ -33,3 +33,11 @@ export async function approveReminder(reminderId: string) {
   await logAction("REMINDER_APPROVED", `reminder=${reminderId}`);
   return reminder;
 }
+export async function rejectReminder(reminderId: string) {
+  const reminder = await prisma.reminder.update({
+    where: { id: reminderId },
+    data: { status: "REJECTED" },
+  });
+  await logAction("REMINDER_REJECTED", `reminder=${reminderId}`);
+  return reminder;
+}
