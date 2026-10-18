@@ -3,7 +3,7 @@
 An AI-powered business assistant for small shop owners in Pakistan. Ask in Roman Urdu or English about stock, sales and pending customer payments, and get payment-reminder drafts that the owner reviews and approves.
 
 - **Live demo:** https://ai-saathi-coral.vercel.app
-- **Demo video:** PASTE_VIDEO_URL
+- **Demo video:** https://youtu.be/g3nKxCWuXis
 - **Demo login:** `demo@aisaathi.pk` / `demo1234` (fictional demo shop data)
 - **Hackathon:** NYLP AI Hackathon 2026, focus area: AI Agents
 - **Team:** codesminds
@@ -135,6 +135,7 @@ AI coding assistants used: Claude Sonnet 5.5 (Anthropic). The team reviewed and 
 ## Acknowledgements
 
 Next.js, Prisma, Zod and the Google Gemini API.
+
 
 
 
