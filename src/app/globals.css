@@ -24,3 +24,6 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* AI Saathi pages are designed for the dark theme */
+html, body { background: #0a0a0a !important; color: #ededed !important; color-scheme: dark; }
