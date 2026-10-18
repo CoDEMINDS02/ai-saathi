@@ -6,7 +6,7 @@ An AI-powered business assistant for small shop owners in Pakistan. Ask in Roman
 - **Demo video:** PASTE_VIDEO_URL
 - **Demo login:** `demo@aisaathi.pk` / `demo1234` (fictional demo shop data)
 - **Hackathon:** NYLP AI Hackathon 2026, focus area: AI Agents
-- **Team:** Code Minds
+- **Team:** codesminds
 
 ## Problem
 
@@ -135,6 +135,7 @@ AI coding assistants used: Claude Sonnet 5.5 (Anthropic). The team reviewed and 
 ## Acknowledgements
 
 Next.js, Prisma, Zod and the Google Gemini API.
+
 
 
 
