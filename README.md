@@ -92,6 +92,7 @@ Create `.env.local` (see `.env.example` for the variable names) and set at least
 
 ```
 DATABASE_URL=your_postgres_connection_string
+AUTH_SECRET=any_long_random_string
 GEMINI_API_KEY=your_google_ai_studio_key
 ```
 
@@ -121,7 +122,7 @@ Open http://localhost:3000/login and sign in with the demo account above.
 | Umair | Frontend developer | Built the user interface: login, dashboard, AI assistant chat, inventory, customers and payments pages, and navigation. |
 | Anosha | Backend developer | Built the backend: database and seed data, services and API routes, authentication and the AI agent tools. |
 
-Development assistance: Claude (Anthropic) was used as a coding assistant. Add any other AI tool you really used. The team reviewed and tested everything that was submitted.
+AI coding assistants used: Claude (Anthropic). The team reviewed and tested everything that was submitted.
 
 ## Known limitations
 
@@ -134,4 +135,6 @@ Development assistance: Claude (Anthropic) was used as a coding assistant. Add a
 ## Acknowledgements
 
 Next.js, Prisma, Zod and the Google Gemini API.
+
+
 
