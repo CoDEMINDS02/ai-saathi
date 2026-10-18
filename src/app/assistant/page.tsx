@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 type ReminderState = "DRAFT" | "BUSY" | "APPROVED" | "REJECTED" | "ERROR";
 type Reminder = { id: string; message: string; state: ReminderState; error?: string };
-type Msg = { role: "user" | "assistant"; text: string; tool?: string; reminder?: Reminder };
+type Msg = { role: "user" | "assistant"; text: string; tool?: string; source?: string; reminder?: Reminder };
 
 const SUGGESTIONS = [
   "Mera low stock batao",
@@ -80,7 +80,7 @@ export default function AssistantPage() {
         rd && rd.reminderId && rd.message
           ? { id: rd.reminderId, message: rd.message, state: "DRAFT" }
           : undefined;
-      setMessages((m) => [...m, { role: "assistant", text: d.reply ?? d.error ?? "Jawab nahi mila.", tool: d.tool, reminder }]);
+      setMessages((m) => [...m, { role: "assistant", text: d.reply ?? d.error ?? "Jawab nahi mila.", tool: d.tool, source: d.source, reminder }]);
     } catch {
       setMessages((m) => [...m, { role: "assistant", text: "Network ka masla aaya. Dobara koshish karein." }]);
     } finally {
@@ -109,7 +109,7 @@ export default function AssistantPage() {
             <div style={{ background: m.role === "user" ? "#2b3a67" : "#1a1a1a", borderRadius: 12, padding: "10px 14px", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
               {m.text}
             </div>
-            {m.tool && <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>tool: {m.tool}</div>}
+            {(m.tool || m.source) && <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>{m.source === "fallback" ? "mode: keyword (AI quota khatam)" : m.source ? `AI: ${m.source}` : ""}{m.tool ? ` | tool: ${m.tool}` : ""}</div>}
 
             {m.reminder && (
               <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -164,4 +164,5 @@ export default function AssistantPage() {
     </>
   );
 }
+
 

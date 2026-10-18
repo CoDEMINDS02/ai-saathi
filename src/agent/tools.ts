@@ -66,7 +66,13 @@ export const toolDefinitions = [
 ] as const;
 
 async function resolveCustomer(name: string) {
-  const matches = await findCustomersByName(name);
+  const raw = await findCustomersByName(name);
+  const words = name.toLowerCase().split(/\s+/).filter(Boolean);
+  const strict = raw.filter((c) => {
+    const tokens = c.name.toLowerCase().split(/\s+/);
+    return words.every((w) => tokens.some((t) => t.startsWith(w)));
+  });
+  const matches = strict.length ? strict : raw;
   if (matches.length === 0) return { error: `"${name}" naam ka koi customer nahi mila.` };
   if (matches.length > 1) {
     return {
@@ -125,3 +131,4 @@ export async function executeTool(name: string, input: unknown): Promise<unknown
     return { error: "Tool chalane mein masla aaya." };
   }
 }
+

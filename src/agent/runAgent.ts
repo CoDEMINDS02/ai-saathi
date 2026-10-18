@@ -6,13 +6,17 @@ import type { AgentResult } from "./fallback";
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+// har model ka apna quota hota hai; ek khatam ho to agla chalta hai
+const MODELS = (process.env.GEMINI_MODELS || "gemini-3.5-flash-lite,gemini-3.1-flash-lite,gemini-3.8-flash")
+  .split(",")
+  .map((m) => m.trim())
+  .filter(Boolean);
 const MAX_STEPS = 5;
-const TIMEOUT_MS = 45000;
+const TIMEOUT_MS = 30000;
 const QUOTA_PAUSE_MS = 15 * 60 * 1000;
+const MISSING_PAUSE_MS = 24 * 60 * 60 * 1000;
 
-// quota khatam ho to kuch der Gemini ko call hi na karein
-let blockedUntil = 0;
+const blockedUntil = new Map<string, number>();
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -21,7 +25,7 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-// sirf 503 (high demand) par ek baar dobara koshish; 429 par retry bekaar hai
+// sirf 503 (high demand) par ek baar dobara koshish
 async function callWithRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await withTimeout(fn(), TIMEOUT_MS);
@@ -37,18 +41,58 @@ async function callWithRetry<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+async function generate(
+  ai: GoogleGenAI,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  contents: any[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  functionDeclarations: any[]
+) {
+  for (const model of MODELS) {
+    if (Date.now() < (blockedUntil.get(model) ?? 0)) continue;
+    try {
+      const res = await callWithRetry(() =>
+        ai.models.generateContent({
+          model,
+          contents,
+          config: {
+            systemInstruction: SYSTEM_PROMPT,
+            tools: [{ functionDeclarations }],
+            ...(/lite/i.test(model) ? {} : { thinkingConfig: { thinkingLevel: "low" as never } }),
+          },
+        })
+      );
+      return { res, model };
+    } catch (e) {
+      const msg = String((e as Error)?.message ?? e);
+      if (/429|RESOURCE_EXHAUSTED/i.test(msg)) {
+        blockedUntil.set(model, Date.now() + QUOTA_PAUSE_MS);
+        console.error(`[agent] ${model} ka quota khatam, agla model try ho raha hai`);
+        continue;
+      }
+      if (/404|NOT_FOUND/i.test(msg)) {
+        blockedUntil.set(model, Date.now() + MISSING_PAUSE_MS);
+        console.error(`[agent] ${model} maujood nahi, agla model try ho raha hai`);
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error("Sab models ka quota khatam");
+}
+
+const fb = async (message: string): Promise<AgentResult> => ({
+  ...(await runFallback(message)),
+  source: "fallback",
+});
+
 export async function runAgent(message: string, history: ChatTurn[] = []): Promise<AgentResult> {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || process.env.AGENT_MODE === "fallback") return runFallback(message);
-  if (Date.now() < blockedUntil) {
-    console.log("[agent] Gemini quota khatam, seedha fallback");
-    return runFallback(message);
-  }
+  if (!apiKey || process.env.AGENT_MODE === "fallback") return fb(message);
 
   try {
     const ai = new GoogleGenAI({ apiKey });
 
-    // pichli baat shamil karein; Gemini ko pehla message "user" ka chahiye
     const turns = history.slice(-6);
     while (turns.length && turns[0].role === "assistant") turns.shift();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -71,24 +115,13 @@ export async function runAgent(message: string, history: ChatTurn[] = []): Promi
 
     for (let step = 0; step < MAX_STEPS; step++) {
       const t0 = Date.now();
-      console.log(`[agent] step ${step + 1}: Gemini ko call ja rahi hai`);
-      const res = await callWithRetry(() =>
-        ai.models.generateContent({
-          model: MODEL,
-          contents,
-          config: {
-            systemInstruction: SYSTEM_PROMPT,
-            tools: [{ functionDeclarations }],
-            thinkingConfig: { thinkingLevel: "low" as never },
-          },
-        })
-      );
-      console.log(`[agent] step ${step + 1} mukammal: ${Date.now() - t0}ms`);
+      const { res, model } = await generate(ai, contents, functionDeclarations);
+      console.log(`[agent] step ${step + 1} (${model}): ${Date.now() - t0}ms`);
 
       const calls = res.functionCalls;
       if (!calls || calls.length === 0) {
         if (!res.text) break;
-        return { reply: res.text, tool: lastTool, data: lastData };
+        return { reply: res.text, tool: lastTool, data: lastData, source: model };
       }
 
       contents.push(res.candidates?.[0]?.content);
@@ -103,15 +136,10 @@ export async function runAgent(message: string, history: ChatTurn[] = []): Promi
       }
       contents.push({ role: "user", parts });
     }
-    return runFallback(message);
+    return fb(message);
   } catch (e) {
-    const msg = String((e as Error)?.message ?? e);
-    if (/429|RESOURCE_EXHAUSTED/i.test(msg)) {
-      blockedUntil = Date.now() + QUOTA_PAUSE_MS;
-      console.error("[agent] Gemini quota khatam. 15 minute fallback chalega.");
-    } else {
-      console.error("LLM fail hua, fallback chal raha hai:", msg.slice(0, 300));
-    }
-    return runFallback(message);
+    console.error("[agent] Gemini fail hua, fallback chal raha hai:", String((e as Error)?.message ?? e).slice(0, 300));
+    return fb(message);
   }
 }
+

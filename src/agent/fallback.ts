@@ -1,7 +1,7 @@
 ﻿import { prisma } from "@/lib/prisma";
 import { executeTool } from "./tools";
 
-export type AgentResult = { reply: string; tool?: string; data?: unknown };
+export type AgentResult = { reply: string; tool?: string; data?: unknown; source?: string };
 
 type LowItem = { name: string; stock: number; reorderLevel: number; suggestedReorderQty: number };
 type Account = { name: string; totalOutstanding: number; overdueAmount: number };
@@ -90,3 +90,4 @@ export async function runFallback(message: string): Promise<AgentResult> {
       'Main stock, sales aur customers ki payments mein madad kar sakta hoon. Poochein: "Mera low stock batao", "Aaj ki sales kitni hain?" ya "Kin customers ki payments pending hain?"',
   };
 }
+
