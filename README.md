@@ -122,7 +122,7 @@ Open http://localhost:3000/login and sign in with the demo account above.
 | Umair | Frontend developer | Built the user interface: login, dashboard, AI assistant chat, inventory, customers and payments pages, and navigation. |
 | Anosha | Backend developer | Built the backend: database and seed data, services and API routes, authentication and the AI agent tools. |
 
-AI coding assistants used: Claude (Anthropic). The team reviewed and tested everything that was submitted.
+AI coding assistants used: Claude Sonnet 5.5 (Anthropic). The team reviewed and tested everything that was submitted.
 
 ## Known limitations
 
@@ -135,6 +135,7 @@ AI coding assistants used: Claude (Anthropic). The team reviewed and tested ever
 ## Acknowledgements
 
 Next.js, Prisma, Zod and the Google Gemini API.
+
 
 
 
