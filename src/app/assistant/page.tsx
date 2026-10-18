@@ -1,8 +1,8 @@
-﻿"use client";
-
-import Nav from "@/components/Nav";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
+import Nav from "@/components/Nav";
+import { Badge } from "@/components/ui";
 
 type ReminderState = "DRAFT" | "BUSY" | "APPROVED" | "REJECTED" | "ERROR";
 type Reminder = { id: string; message: string; state: ReminderState; error?: string };
@@ -15,8 +15,21 @@ const SUGGESTIONS = [
   "Ali ko payment reminder bana do",
 ];
 
-const box = { border: "1px solid #fff", borderRadius: 12 } as const;
-const btn = { borderRadius: 8, padding: "6px 14px", border: "none", cursor: "pointer", color: "#fff", fontSize: 13 } as const;
+const btnBase =
+  "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+
+function StatusBadge({ m }: { m: Msg }) {
+  if (!m.tool && !m.source) return null;
+  const ai = m.source === "fallback" ? "mode: keyword (AI quota khatam)" : m.source ? `AI: ${m.source}` : "";
+  const tool = m.tool ? `tool: ${m.tool}` : "";
+  const text = [ai, tool].filter(Boolean).join(" | ");
+  const tone = m.source === "fallback" ? "warn" : m.source ? "good" : "neutral";
+  return (
+    <div className="mt-1.5">
+      <Badge tone={tone}>{text}</Badge>
+    </div>
+  );
+}
 
 export default function AssistantPage() {
   const [messages, setMessages] = useState<Msg[]>([
@@ -28,7 +41,7 @@ export default function AssistantPage() {
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading]);
 
   function patchReminder(index: number, patch: Partial<Reminder>) {
@@ -90,79 +103,143 @@ export default function AssistantPage() {
 
   return (
     <>
-    <Nav />
-    <main style={{ maxWidth: 640, margin: "0 auto", padding: 24, color: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 16 }}>AI Saathi assistant</h1>
+      <Nav />
+      <main className="mx-auto flex h-[calc(100dvh-4rem)] w-full max-w-3xl flex-col px-4 py-4 sm:px-6 sm:py-6">
+        <header className="mb-3">
+          <h1 className="font-display text-3xl leading-tight">AI Saathi assistant</h1>
+          <p className="mt-1 text-sm text-muted">
+            Jawab aap ke apne records se aate hain. Reminder sirf draft banta hai.
+          </p>
+        </header>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-        {SUGGESTIONS.map((s) => (
-          <button key={s} onClick={() => send(s)} disabled={loading}
-            style={{ ...box, padding: "6px 12px", background: "transparent", color: "#fff", cursor: "pointer", fontSize: 13 }}>
-            {s}
-          </button>
-        ))}
-      </div>
+        <div className="mb-3 flex flex-wrap gap-2">
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => send(s)}
+              disabled={loading}
+              className="rounded-full border border-line-2 bg-white px-3.5 py-1.5 text-sm text-soft transition-colors hover:border-ink hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {s}
+            </button>
+          ))}
+        </div>
 
-      <div style={{ ...box, flex: 1, padding: 16, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, minHeight: 360 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "85%" }}>
-            <div style={{ background: m.role === "user" ? "#2b3a67" : "#1a1a1a", borderRadius: 12, padding: "10px 14px", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>
-              {m.text}
-            </div>
-            {(m.tool || m.source) && <div style={{ fontSize: 11, opacity: 0.6, marginTop: 4 }}>{m.source === "fallback" ? "mode: keyword (AI quota khatam)" : m.source ? `AI: ${m.source}` : ""}{m.tool ? ` | tool: ${m.tool}` : ""}</div>}
+        <div
+          role="log"
+          aria-live="polite"
+          aria-label="Baat cheet"
+          className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto rounded-2xl border border-line bg-white p-4 shadow-sm shadow-ink/5 sm:p-5"
+        >
+          {messages.map((m, i) => (
+            <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div className="max-w-[90%] sm:max-w-[82%]">
+                <div
+                  className={`whitespace-pre-wrap leading-relaxed ${
+                    m.role === "user"
+                      ? "rounded-2xl rounded-br-sm bg-ink px-4 py-2.5 text-paper"
+                      : "rounded-2xl rounded-bl-sm border border-line bg-paper px-4 py-3"
+                  }`}
+                >
+                  {m.text}
+                </div>
 
-            {m.reminder && (
-              <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                {(m.reminder.state === "DRAFT" || m.reminder.state === "BUSY" || m.reminder.state === "ERROR") && (
-                  <>
-                    <button onClick={() => decide(i, m.reminder!.id, "approve")} disabled={m.reminder.state === "BUSY"}
-                      style={{ ...btn, background: "#1f7a4d" }}>
-                      Manzoor karein
-                    </button>
-                    <button onClick={() => decide(i, m.reminder!.id, "reject")} disabled={m.reminder.state === "BUSY"}
-                      style={{ ...btn, background: "#8a2f2f" }}>
-                      Radd karein
-                    </button>
-                    {m.reminder.state === "BUSY" && <span style={{ fontSize: 12, opacity: 0.7 }}>Ruk jayein...</span>}
-                    {m.reminder.state === "ERROR" && <span style={{ fontSize: 12, color: "#ff8a8a" }}>{m.reminder.error}</span>}
-                  </>
-                )}
-                {m.reminder.state === "APPROVED" && (
-                  <>
-                    <span style={{ fontSize: 13, color: "#6fdc9c" }}>Manzoor ho gaya. Ab aap isay khud bhej sakte hain.</span>
-                    <button onClick={() => copyText(m.reminder!.message)} style={{ ...btn, background: "#2b3a67" }}>
-                      {copied ? "Copy ho gaya" : "Message copy karein"}
-                    </button>
-                  </>
-                )}
-                {m.reminder.state === "REJECTED" && (
-                  <span style={{ fontSize: 13, color: "#ff8a8a" }}>Radd kar diya gaya. Ye nahi bheja jayega.</span>
+                {m.role === "assistant" && <StatusBadge m={m} />}
+
+                {m.reminder && (
+                  <div className="mt-2.5 rounded-xl border border-line bg-white p-3">
+                    {(m.reminder.state === "DRAFT" || m.reminder.state === "BUSY" || m.reminder.state === "ERROR") && (
+                      <>
+                        <p className="mb-2.5 text-xs text-muted">
+                          Ye sirf draft hai. Manzoor karne par bhi message khud nahi bheja jata.
+                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => decide(i, m.reminder!.id, "approve")}
+                            disabled={m.reminder.state === "BUSY"}
+                            className={`${btnBase} bg-good text-white hover:bg-[#185a30]`}
+                          >
+                            Manzoor karein
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => decide(i, m.reminder!.id, "reject")}
+                            disabled={m.reminder.state === "BUSY"}
+                            className={`${btnBase} border border-bad text-bad hover:bg-bad-bg`}
+                          >
+                            Radd karein
+                          </button>
+                          {m.reminder.state === "BUSY" && <span className="text-xs text-muted">Ruk jayein...</span>}
+                          {m.reminder.state === "ERROR" && (
+                            <span role="alert" className="text-xs text-bad">{m.reminder.error}</span>
+                          )}
+                        </div>
+                      </>
+                    )}
+                    {m.reminder.state === "APPROVED" && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm text-good">Manzoor ho gaya. Ab aap isay khud bhej sakte hain.</span>
+                        <button
+                          type="button"
+                          onClick={() => copyText(m.reminder!.message)}
+                          className={`${btnBase} bg-ink text-white hover:bg-ink-2`}
+                        >
+                          {copied ? "Copy ho gaya" : "Message copy karein"}
+                        </button>
+                      </div>
+                    )}
+                    {m.reminder.state === "REJECTED" && (
+                      <span className="text-sm text-bad">Radd kar diya gaya. Ye nahi bheja jayega.</span>
+                    )}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        ))}
-        {loading && <div style={{ opacity: 0.6, fontSize: 14 }}>AI Saathi soch raha hai...</div>}
-        <div ref={endRef} />
-      </div>
+            </div>
+          ))}
 
-      <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send(input)}
-          placeholder="Apna sawal likhein..."
-          maxLength={500}
-          style={{ ...box, flex: 1, padding: "10px 14px", background: "transparent", color: "#fff" }}
-        />
-        <button onClick={() => send(input)} disabled={loading || !input.trim()}
-          style={{ borderRadius: 12, padding: "10px 20px", background: "#2b3a67", color: "#fff", border: "none", cursor: "pointer" }}>
-          Bhejein
-        </button>
-      </div>
-    </main>
+          {loading && (
+            <div role="status" className="flex items-center gap-2 text-sm text-muted">
+              <span className="flex gap-1" aria-hidden="true">
+                {[0, 1, 2].map((n) => (
+                  <span
+                    key={n}
+                    className="size-1.5 rounded-full bg-muted motion-safe:animate-bounce"
+                    style={{ animationDelay: `${n * 120}ms` }}
+                  />
+                ))}
+              </span>
+              AI Saathi soch raha hai...
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            send(input);
+          }}
+          className="mt-3 flex gap-2"
+        >
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Apna sawal likhein..."
+            maxLength={500}
+            aria-label="Apna sawal"
+            className="min-w-0 flex-1 rounded-xl border border-line-2 bg-white px-4 py-3 text-base text-ink outline-none transition-shadow placeholder:text-[#7a869e] hover:border-[#9fb0d0] focus:border-ink focus-visible:ring-4 focus-visible:ring-ink/10"
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="rounded-xl bg-ink px-5 py-3 text-base font-medium text-white transition-colors hover:bg-ink-2 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Bhejein
+          </button>
+        </form>
+      </main>
     </>
   );
 }
-
-

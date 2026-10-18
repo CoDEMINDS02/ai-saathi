@@ -1,11 +1,7 @@
-﻿import Nav from "@/components/Nav";
 import { listPendingAccounts, listOverdueAccounts } from "@/services/credit.service";
+import { Avatar, Badge, Card, PageShell, Stat, rs, td, th } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
-
-const cell = { padding: "10px 12px", borderBottom: "1px solid #333", textAlign: "left" } as const;
-const rs = (n: number) => `Rs ${n.toLocaleString("en-US")}`;
-const card = { border: "1px solid #fff", borderRadius: 12, padding: 16, minWidth: 180 } as const;
 
 export default async function PaymentsPage() {
   const notNull = <T,>(x: T | null): x is T => x !== null;
@@ -16,48 +12,45 @@ export default async function PaymentsPage() {
   const overdueTotal = overdue.reduce((s, a) => s + a.overdueAmount, 0);
 
   return (
-    <main style={{ color: "#fff", minHeight: "100vh" }}>
-      <Nav />
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px 48px" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 20 }}>Payments</h1>
+    <PageShell title="Payments" subtitle="Customers ka baqi udhaar aur overdue hisaab.">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:max-w-xl">
+        <Stat label="Total baqi" value={rs(total)} sub={`${pending.length} customers`} tone="warn" />
+        <Stat label="Overdue" value={rs(overdueTotal)} sub={`${overdue.length} customers`} tone="bad" />
+      </div>
 
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
-          <div style={card}>
-            <div style={{ opacity: 0.7, fontSize: 14 }}>Total baqi</div>
-            <div style={{ fontSize: 24, fontWeight: 700 }}>{rs(total)}</div>
-            <div style={{ opacity: 0.7, fontSize: 13 }}>{pending.length} customers</div>
-          </div>
-          <div style={card}>
-            <div style={{ opacity: 0.7, fontSize: 14 }}>Overdue</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "#ff8a8a" }}>{rs(overdueTotal)}</div>
-            <div style={{ opacity: 0.7, fontSize: 13 }}>{overdue.length} customers</div>
-          </div>
-        </div>
-
-        <div style={{ overflowX: "auto", border: "1px solid #fff", borderRadius: 12 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[480px] border-collapse text-left text-sm">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th style={cell}>Customer</th>
-                <th style={cell}>Total baqi</th>
-                <th style={cell}>Overdue</th>
+                <th className={th}>Customer</th>
+                <th className={`${th} text-right`}>Total baqi</th>
+                <th className={`${th} text-right`}>Overdue</th>
               </tr>
             </thead>
             <tbody>
               {pending.map((a) => (
-                <tr key={a.name}>
-                  <td style={cell}>{a.name}</td>
-                  <td style={cell}>{rs(a.totalOutstanding)}</td>
-                  <td style={{ ...cell, color: a.overdueAmount > 0 ? "#ff8a8a" : "inherit" }}>
-                    {a.overdueAmount > 0 ? rs(a.overdueAmount) : "-"}
+                <tr key={a.name} className="border-t border-line transition-colors hover:bg-paper/70">
+                  <td className={td}>
+                    <div className="flex items-center gap-3">
+                      <Avatar name={a.name} />
+                      <span className="font-medium">{a.name}</span>
+                    </div>
+                  </td>
+                  <td className={`${td} text-right tabular-nums`}>{rs(a.totalOutstanding)}</td>
+                  <td className={`${td} text-right`}>
+                    {a.overdueAmount > 0 ? (
+                      <Badge tone="bad">{rs(a.overdueAmount)}</Badge>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
-    </main>
+      </Card>
+    </PageShell>
   );
 }
-

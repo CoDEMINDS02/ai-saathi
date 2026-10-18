@@ -1,11 +1,8 @@
-﻿import Nav from "@/components/Nav";
 import { prisma } from "@/lib/prisma";
 import { listPendingAccounts } from "@/services/credit.service";
+import { Avatar, Badge, Card, PageShell, rs, td, th } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
-
-const cell = { padding: "10px 12px", borderBottom: "1px solid #333", textAlign: "left" } as const;
-const rs = (n: number) => `Rs ${n.toLocaleString("en-US")}`;
 
 export default async function CustomersPage() {
   const [customers, pending] = await Promise.all([
@@ -15,31 +12,40 @@ export default async function CustomersPage() {
   const owed = new Map(pending.flatMap((a) => (a ? [[a.name, a] as const] : [])));
 
   return (
-    <main style={{ color: "#fff", minHeight: "100vh" }}>
-      <Nav />
-      <div style={{ maxWidth: 860, margin: "0 auto", padding: "0 24px 48px" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700 }}>Customers</h1>
-        <p style={{ opacity: 0.7, margin: "8px 0 20px" }}>{customers.length} customers</p>
-        <div style={{ overflowX: "auto", border: "1px solid #fff", borderRadius: 12 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
+    <PageShell title="Customers" subtitle={`${customers.length} customers`}>
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] border-collapse text-left text-sm">
+            <thead className="bg-paper text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th style={cell}>Naam</th>
-                <th style={cell}>Phone</th>
-                <th style={cell}>Baqi</th>
-                <th style={cell}>Overdue</th>
+                <th className={th}>Naam</th>
+                <th className={th}>Phone</th>
+                <th className={`${th} text-right`}>Baqi</th>
+                <th className={`${th} text-right`}>Overdue</th>
               </tr>
             </thead>
             <tbody>
               {customers.map((c) => {
                 const a = owed.get(c.name);
+                const hasOverdue = !!a && a.overdueAmount > 0;
                 return (
-                  <tr key={c.id}>
-                    <td style={cell}>{c.name}</td>
-                    <td style={cell}>{c.phone ?? "-"}</td>
-                    <td style={cell}>{a ? rs(a.totalOutstanding) : "-"}</td>
-                    <td style={{ ...cell, color: a && a.overdueAmount > 0 ? "#ff8a8a" : "inherit" }}>
-                      {a && a.overdueAmount > 0 ? rs(a.overdueAmount) : "-"}
+                  <tr key={c.id} className="border-t border-line transition-colors hover:bg-paper/70">
+                    <td className={td}>
+                      <div className="flex items-center gap-3">
+                        <Avatar name={c.name} />
+                        <span className="font-medium">{c.name}</span>
+                      </div>
+                    </td>
+                    <td className={`${td} tabular-nums text-muted`}>{c.phone ?? "-"}</td>
+                    <td className={`${td} text-right tabular-nums`}>
+                      {a ? rs(a.totalOutstanding) : <span className="text-muted">-</span>}
+                    </td>
+                    <td className={`${td} text-right`}>
+                      {hasOverdue ? (
+                        <Badge tone="bad">{rs(a.overdueAmount)}</Badge>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -47,8 +53,7 @@ export default async function CustomersPage() {
             </tbody>
           </table>
         </div>
-      </div>
-    </main>
+      </Card>
+    </PageShell>
   );
 }
-

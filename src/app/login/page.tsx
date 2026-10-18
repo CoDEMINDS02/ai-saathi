@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -243,7 +243,7 @@ export default function LoginPage() {
                     className="size-4 rounded-full border-2 border-white/40 border-t-white motion-safe:animate-spin"
                   />
                 )}
-                {loading ? "Login ho raha haiâ€¦" : "Login karein"}
+                {loading ? "Login ho raha hai..." : "Login karein"}
               </button>
             </form>
 
