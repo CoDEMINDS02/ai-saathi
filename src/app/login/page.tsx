@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -85,8 +85,8 @@ export default function LoginPage() {
       });
       if (res.ok) {
         setFormError("");
-        router.push("/dashboard");
-        router.refresh();
+        window.location.assign("/dashboard");
+        
         return; // loading tab tak rahe jab tak page badal na jaye
       }
       const data = await res.json().catch(() => null);
@@ -243,7 +243,7 @@ export default function LoginPage() {
                     className="size-4 rounded-full border-2 border-white/40 border-t-white motion-safe:animate-spin"
                   />
                 )}
-                {loading ? "Login ho raha hai…" : "Login karein"}
+                {loading ? "Login ho raha haiâ€¦" : "Login karein"}
               </button>
             </form>
 
